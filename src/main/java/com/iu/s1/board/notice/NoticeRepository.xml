@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.iu.s1.board.notice.NoticeRepository">
+	
+	<sql id="kind">
+		<choose>
+			<when test="kind=='bt'">
+				title
+			</when>
+			<when test="kind=='bw'">
+				writer
+			</when>
+			<otherwise>
+				num
+			</otherwise>
+		</choose>
+	</sql>
+
+	<insert id="setInsert" parameterType="NoticeVO" useGeneratedKeys="true" keyProperty="num">
+		insert into notice values(#{num}, #{title}, #{writer}, #{contents}, now(), 0)		
+	</insert>
+	
+	<update id="setUpdate" parameterType="NoticeVO">
+		UPDATE notice SET title=#{title}, contents=#{contents} WHERE num=#{num}
+	</update>
+	
+	<delete id="setDelete" parameterType="NoticeVO">
+		DELETE FROM notice WHERE num=#{num}
+	</delete>
+	
+	<select id="getSelectOne" parameterType="NoticeVO" resultType="NoticeVO">
+		SELECT * FROM notice WHERE num=#{num}	
+	</select>
+	
+	<update id="hitUp" parameterType="NoticeVO">
+		UPDATE notice SET hit=hit+1 WHERE num=#{num}
+	</update>
+	
+	<select id="getSelectList" parameterType="com.iu.s1.util.Pager" resultType="NoticeVO">
+		SELECT * FROM notice WHERE <include refid="kind"></include>	like concat('%', #{search}, '%')
+		ORDER BY num DESC LIMIT #{startRow}, #{perPage}
+	</select>
+	
+	<select id="noticeCount" parameterType="com.iu.s1.util.Pager" resultType="Long">
+		SELECT COUNT(num) FROM notice WHERE <include refid="kind"></include> like concat('%', #{search}, '%')
+	</select>
+
+</mapper>

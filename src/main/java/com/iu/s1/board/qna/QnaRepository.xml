@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="com.iu.s1.board.qna.QnaRepository">
+	
+	<sql id="kind">
+		<choose>
+			<when test="kind=='bt'">
+				title
+			</when>
+			<when test="kind=='bw'">
+				writer
+			</when>
+			<otherwise>
+				num
+			</otherwise>
+		</choose>
+	</sql>
+
+	<insert id="setInsert" parameterType="QnaVO" useGeneratedKeys="true" keyProperty="num">
+		insert into qna values(#{num}, #{title}, #{writer}, #{contents}, now(), 0, #{num}, 0, 0)		
+	</insert>
+	
+	<update id="setUpdate" parameterType="QnaVO">
+		UPDATE qna SET title=#{title}, contents=#{contents} WHERE num=#{num}
+	</update>
+	
+	<select id="getSelectNum" resultType="java.lang.Integer">
+		Select num FROM qna ORDER BY num DESC LIMIT 0,1
+	</select>
+	
+	<update id="setReplyUpdate" parameterType="QnaVO">
+		UPDATE qna SET ref=#{num} WHERE num=#{num}
+	</update>
+	
+	<delete id="setDelete" parameterType="QnaVO">
+		DELETE FROM qna WHERE num=#{num}
+	</delete>
+	
+	<select id="getSelectOne" parameterType="QnaVO" resultType="QnaVO">
+		SELECT * FROM qna WHERE num=#{num}	
+	</select>
+	
+	<update id="hitUp" parameterType="QnaVO">
+		UPDATE qna SET hit=hit+1 WHERE num=#{num}
+	</update>
+	
+	<select id="getSelectList" parameterType="com.iu.s1.util.Pager" resultType="QnaVO">
+		SELECT * FROM qna WHERE <include refid="kind"></include> like concat('%', #{search}, '%')
+		ORDER BY ref DESC, step asc LIMIT #{startRow}, #{perPage}
+	</select>
+	
+	<select id="qnaCount" parameterType="com.iu.s1.util.Pager" resultType="Long">
+		SELECT COUNT(num) FROM qna WHERE <include refid="kind"></include> like concat('%', #{search}, '%')
+	</select>
+	
+	<update id="qnaReplyUpdate" parameterType="QnaVO">
+		UPDATE qna SET step=(step+1) WHERE ref=(SELECT ref FROM (SELECT * FROM qna) as c WHERE num=#{num} )
+		AND	step >=(SELECT step FROM (SELECT * FROM qna) as c WHERE num=#{num});
+	</update>
+
+	<insert id="qnaReplyInsert" parameterType="QnaVO">
+  		INSERT INTO qna VALUES(0, 
+  		#{title}, #{writer}, #{contents}, now(), 0, 
+  		(SELECT ref FROM (SELECT * FROM qna)as c WHERE num=#{num}), 
+  		(SELECT step FROM (SELECT * FROM qna)as c WHERE num=#{num})+1,
+  		(SELECT depth FROM (SELECT * FROM qna)as c WHERE num=#{num})+1
+  		)
+  	</insert>
+</mapper>
